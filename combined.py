@@ -51,10 +51,12 @@ class StudentModel:
             "return_full_text": False
         }
         prompt = f"""
-Du bist ein Experte für Mülltrennung und erklärst, warum ein bestimmtes Produkt korrekt entsorgt werden sollte und es nicht in die angegebene Kategorie des Nutzers gehört.  
+Du bist ein Experte für Mülltrennung und erklärst, warum ein bestimmtes Produkt korrekt entsorgt werden sollte und es nicht in die vom Nutzer angegebene Kategorie gehört.  
 Gib eine Begründung, warum es den bestimmten Müllkategorie zugeordnet wird, die zur Verdeutlichung genannt wurde.  
 Verdeutliche dies mit einem Beispiel, warum die vom Nutzer gewählte Kategorie falsch ist.  
-Antwort in maximal 500 Zeichen und ausschließlich auf Deutsch.
+Antwort in maximal 500 Zeichen und ausschließlich auf Deutsch. 
+
+Die Query:
 
 {query}
 """
