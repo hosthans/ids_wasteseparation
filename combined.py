@@ -5,7 +5,6 @@ import requests
 from enum import Enum
 from typing import List, Dict
 from collections import defaultdict
-from transformers import pipeline
 
 # Define WasteType Enum
 class WasteType(Enum):
