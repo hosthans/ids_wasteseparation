@@ -5,6 +5,7 @@ import requests
 from enum import Enum
 from typing import List, Dict
 from collections import defaultdict
+from transformers import pipeline
 
 # Define WasteType Enum
 class WasteType(Enum):
@@ -36,21 +37,28 @@ class StudentModel:
         self.aktuelles_item_index = random.randint(0, len(items_filtered_by_difficulty) - 1)
         return items_filtered_by_difficulty[self.aktuelles_item_index]
 
-    def getAdditionalInformation(self, item: WasteItem):
-        url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct"
+    def getAdditionalInformation(self, item: WasteItem, userItems: str):
+        url = "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
         token = "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"
-        query = f"Warum sollte {item.name} in die folgenden Müllkategorie(n) geworfen werden: {', '.join([w.value for w in item.waste_types])}?"
+        query = f"Warum sollte {item.name} in die folgenden Müllkategorie(n) geworfen werden: {', '.join([w.value for w in item.waste_types])}? Der Nutzer hat sich für die falsche entschieden: {userItems}"
         return self.llm(query, token, url)
 
     def llm(self, query, token, url):
         parameters = {
             "max_new_tokens": 500,
-            "temperature": 0.7,
+            "temperature": 0.8,
             "top_k": 50,
             "top_p": 0.95,
             "return_full_text": False
         }
-        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>You are a helpful and knowledgeable assistant. You provide explanations about the categorization of waste. Please provide a detailed but concise answer as to why the following waste should go into specific categories. Do it in german.<|eot_id|>user<|end_header_id|> Here is the query: ```{query}```. Provide a clear and accurate explanation.<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
+        prompt = f"""
+Du bist ein Experte für Mülltrennung und erklärst, warum ein bestimmtes Produkt korrekt entsorgt werden sollte und es nicht in die angegebene Kategorie des Nutzers gehört.  
+Gib eine Begründung, warum es den bestimmten Müllkategorie zugeordnet wird.  
+Verdeutliche dies mit einem Beispiel, warum die vom Nutzer gewählte Kategorie falsch ist.  
+Antwort in maximal 500 Zeichen und ausschließlich auf Deutsch.
+
+{query}
+"""
         headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
         payload = {"inputs": prompt, "parameters": parameters}
         response = requests.post(url, headers=headers, json=payload)
@@ -59,14 +67,15 @@ class StudentModel:
         else:
             return f"Error: {response.status_code}, unable to fetch the explanation."
 
-    def getFeedback(self, item: WasteItem, correct: bool):
+    def getFeedback(self, item: WasteItem, correct: bool, user_input: list):
         if correct:
             self.current_difficulty = min(self.current_difficulty + 1, 3)
             return "Gut gemacht! Du kannst die richtige Tonne wählen!"
         else:
             self.current_difficulty = max(self.current_difficulty - 1, 1)
             waste_type_str = ', '.join(w.value for w in item.waste_types)
-            return f"Das passt aber nicht so gut! Tipp: {item.name} ist ein Produkt, das aufgrund der Aufbereitung den folgenden Tonnen zugeordnet wird: {waste_type_str}.\n\n{self.getAdditionalInformation(item=item)}"
+            user_type_str = ', '.join(w for w in user_input)
+            return f"Das passt aber nicht so gut! Tipp: {item.name} ist ein Produkt, das aufgrund der Aufbereitung den folgenden Tonnen zugeordnet wird: {waste_type_str}.\n\n{self.getAdditionalInformation(item=item, userItems=user_type_str)}"
 
 # Define DidacticModel Class
 class DidacticModel:
@@ -247,12 +256,12 @@ class GameEnvironment:
                 else:
                     ergebnis = spiel.antwort_bewerten(ausgewaehlte_kategorien, st.session_state.aktuelles_item)
                     if ergebnis['ist_korrekt']:
-                        st.success(studentModel.getFeedback(st.session_state.aktuelles_item, True))
+                        st.success(studentModel.getFeedback(st.session_state.aktuelles_item, True, ausgewaehlte_kategorien))
                         st.session_state.aktuelles_item = studentModel.getAttribute(domainModel.waste_items)
                     else:
                         st.error("Das ist leider falsch!")
                         with st.spinner("Weitere Infos werden geladen..."):
-                            st.info(studentModel.getFeedback(st.session_state.aktuelles_item, False))
+                            st.info(studentModel.getFeedback(st.session_state.aktuelles_item, False, ausgewaehlte_kategorien))
                         st.session_state.aktuelles_item = studentModel.getAttribute(domainModel.waste_items)
                     if st.button("Nächstes Bild"):
                         st.rerun()
@@ -277,8 +286,8 @@ waste_items = [
     WasteItem("Hybridverpackung (Papier/Plastik)", [WasteType.PAPIER, WasteType.PLASTIK], 3, "https://d569htemax5yg.cloudfront.net/catalog/product/P/2/P2G8307.jpg"),
     WasteItem("Apfelgriebs", [WasteType.BIOLOGISCH], 2, "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Apfelgriebsch.JPG/1200px-Apfelgriebsch.JPG"),
     WasteItem("E-Zigarette", [WasteType.GIFTIG], 2, "https://i.ds.at/IEZH8w/c:1200:800:fp:0.500:0.500/rs:fill:750:0/plain/lido-images/2024/05/02/8a325d6b-97c9-4f37-9bc4-dfbc207cdfe5.jpeg"),
-    WasteItem("Caprisonne", [WasteType.PLASTIK, WasteType.SONSTIGE], 3, "https://i0.web.de/image/572/40095572,pd=1,f=sdata11/trinkpaeckchen-capri-sun-papierstrohhalm.jpg"),
-    WasteItem("Papierstrohalm", [WasteType.SONSTIGE], 1, "https://partyvikings.de/media/catalog/product/cache/a8a7725c9f67a2f4a037f0ab6a30a27c/p/a/paperstraws.jpeg")
+    WasteItem("Caprisonne", [WasteType.PLASTIK, WasteType.SONSTIGE], 1, "https://i0.web.de/image/572/40095572,pd=1,f=sdata11/trinkpaeckchen-capri-sun-papierstrohhalm.jpg"),
+    WasteItem("beschichteter Papierstrohalm", [WasteType.SONSTIGE], 1, "https://partyvikings.de/media/catalog/product/cache/a8a7725c9f67a2f4a037f0ab6a30a27c/p/a/paperstraws.jpeg")
 ]
 
 # Define Intro Exercises
