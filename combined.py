@@ -202,11 +202,11 @@ class GameEnvironment:
         self.program_switcher()
 
     def program_switcher(self):
-        self.hauptprogramm()
-        # if st.session_state.is_intro_completed:
-        #     self.hauptprogramm()
-        # else:
-        #     self.introprogramm()
+        # self.hauptprogramm()
+        if st.session_state.is_intro_completed:
+            self.hauptprogramm()
+        else:
+            self.introprogramm()
 
     def introprogramm(self):
         st.title("📘 Einführung in das Recycling")
@@ -288,7 +288,7 @@ waste_items = [
     WasteItem("Hybridverpackung (Papier/Plastik)", [WasteType.PAPIER, WasteType.PLASTIK], 3, "https://d569htemax5yg.cloudfront.net/catalog/product/P/2/P2G8307.jpg"),
     WasteItem("Apfelgriebs", [WasteType.BIOLOGISCH], 2, "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Apfelgriebsch.JPG/1200px-Apfelgriebsch.JPG"),
     WasteItem("E-Zigarette", [WasteType.GIFTIG], 2, "https://i.ds.at/IEZH8w/c:1200:800:fp:0.500:0.500/rs:fill:750:0/plain/lido-images/2024/05/02/8a325d6b-97c9-4f37-9bc4-dfbc207cdfe5.jpeg"),
-    WasteItem("Caprisonne", [WasteType.PLASTIK, WasteType.SONSTIGE], 1, "https://i0.web.de/image/572/40095572,pd=1,f=sdata11/trinkpaeckchen-capri-sun-papierstrohhalm.jpg"),
+    WasteItem("Caprisonne", [WasteType.PLASTIK, WasteType.SONSTIGE], 3, "https://i0.web.de/image/572/40095572,pd=1,f=sdata11/trinkpaeckchen-capri-sun-papierstrohhalm.jpg"),
     WasteItem("beschichteter Papierstrohalm", [WasteType.SONSTIGE], 1, "https://partyvikings.de/media/catalog/product/cache/a8a7725c9f67a2f4a037f0ab6a30a27c/p/a/paperstraws.jpeg")
 ]
 
