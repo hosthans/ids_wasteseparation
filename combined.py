@@ -5,6 +5,7 @@ import requests
 from enum import Enum
 from typing import List, Dict
 from collections import defaultdict
+from transformers import pipeline
 
 # Define WasteType Enum
 class WasteType(Enum):
@@ -37,9 +38,9 @@ class StudentModel:
         return items_filtered_by_difficulty[self.aktuelles_item_index]
 
     def getAdditionalInformation(self, item: WasteItem, userItems: str):
-        url = "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+        url = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
         token = "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"
-        query = f"Warum sollte {item.name} in die folgenden Müllkategorie(n) geworfen werden: {', '.join([w.value for w in item.waste_types])}? Der Nutzer hat sich für die falsche entschieden: {userItems}"
+        query = f"Verdeutliche, dass {item.name} in die folgenden Müllkategorie(n) geworfen werden muss: {', '.join([w.value for w in item.waste_types])}? Der Nutzer hat sich für die falsche Müllart entschieden: {userItems}"
         return self.llm(query, token, url)
 
     def llm(self, query, token, url):
@@ -52,7 +53,7 @@ class StudentModel:
         }
         prompt = f"""
 Du bist ein Experte für Mülltrennung und erklärst, warum ein bestimmtes Produkt korrekt entsorgt werden sollte und es nicht in die angegebene Kategorie des Nutzers gehört.  
-Gib eine Begründung, warum es den bestimmten Müllkategorie zugeordnet wird.  
+Gib eine Begründung, warum es den bestimmten Müllkategorie zugeordnet wird, die zur Verdeutlichung genannt wurde.  
 Verdeutliche dies mit einem Beispiel, warum die vom Nutzer gewählte Kategorie falsch ist.  
 Antwort in maximal 500 Zeichen und ausschließlich auf Deutsch.
 
@@ -200,10 +201,11 @@ class GameEnvironment:
         self.program_switcher()
 
     def program_switcher(self):
-        if st.session_state.is_intro_completed:
-            self.hauptprogramm()
-        else:
-            self.introprogramm()
+        self.hauptprogramm()
+        # if st.session_state.is_intro_completed:
+        #     self.hauptprogramm()
+        # else:
+        #     self.introprogramm()
 
     def introprogramm(self):
         st.title("📘 Einführung in das Recycling")
